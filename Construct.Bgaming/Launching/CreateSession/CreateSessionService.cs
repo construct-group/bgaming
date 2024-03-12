@@ -1,6 +1,9 @@
 ﻿using Construct.Bgaming.Launching.StartDemoGame;
 using Construct.Bgaming.Security;
 using Construct.Bgaming.Types;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace Construct.Bgaming.Launching.CreateSession;
 
@@ -10,17 +13,15 @@ file record CreateSessionRequestJson
     [JsonProperty("currency")] public string Currency { get; init; } = null!; //
     [JsonProperty("game")] public string Game { get; init; } = null!;
     [JsonProperty("game_id")] public string GameId { get; init; } = null!;
-    [JsonProperty("finished")] public bool Finished { get; init; } = null!; 
+    [JsonProperty("finished")] public bool Finished { get; init; }
     [JsonProperty("actions")] public RequestActions Actions { get; init; } = null!;
-
-    //session_id 
 }
 
 internal class CreateSessionService : ICreateSessionService
 {
     private readonly BgamingConfigurationParameters parameters;
     private readonly IBgamingSecurityService securityService;
-    private readonly ILogger<StartDemoGameService> logger;
+    private readonly ILogger<CreateSessionService> logger;
 
     public CreateSessionService(
     BgamingConfigurationParameters parameters,
@@ -42,7 +43,7 @@ internal class CreateSessionService : ICreateSessionService
             Currency = request.Currency.ToString(),
             Game = request.Game.ToString(),
             GameId = request.GameId.ToString(),
-            Finished = request.Finished.ToString(),
+            Finished = request.Finished,
             Actions = request.Actions
         };
         using var client = new HttpClient();

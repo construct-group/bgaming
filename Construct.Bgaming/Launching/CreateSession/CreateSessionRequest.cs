@@ -8,9 +8,9 @@ namespace Construct.Bgaming.Launching.CreateSession;
 public record CreateSessionRequest
 {
     public Guid UserId { get; init; }
-    public CurrencyBase Currency { get; init; } 
+    public CurrencyBase Currency { get; init; } = null!;
     public Game Game { get; init; }
     public Guid GameId { get; init; }
-    public bool Finished { get; init; } = null!;
+    public bool Finished { get; init; }
     public RequestActions Actions { get; init; } = null!;
 }
