@@ -1,4 +1,5 @@
-﻿using Construct.Bgaming.Launching.StartDemoGame;
+﻿using Construct.Bgaming.Launching.CreateSession;
+using Construct.Bgaming.Launching.StartDemoGame;
 using Construct.Bgaming.Security;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -12,6 +13,7 @@ public static class BgamingServiceBuilder
         services.AddSingleton(parameters);
         services.AddSingleton<IBgamingSecurityService, BgamingSecurityService>();
         services.AddSingleton<IStartDemoGameService, StartDemoGameService>();
+        services.AddSingleton<ICreateSessionService, CreateSessionService>();
         return services;
     }
 }
