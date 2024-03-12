@@ -60,8 +60,8 @@ internal class StartDemoGameService : IStartDemoGameService
         {
             LaunchOptions = new()
             {
-                GameUrl = response["launch_options"]["game_url"],
-                Strategy = response["launch_options"]["strategy"]
+                GameUrl = new Uri(response["launch_options"]["game_url"]),
+                Strategy = Enum.Parse<LaunchStrategy>(response["launch_options"]["strategy"])
             }
         };
     }
