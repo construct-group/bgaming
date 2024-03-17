@@ -1,5 +1,4 @@
-﻿using Construct.Bgaming.Launching.StartDemoGame;
-using Construct.Bgaming.Security;
+﻿using Construct.Bgaming.Security;
 using Construct.Bgaming.Types;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -9,12 +8,34 @@ namespace Construct.Bgaming.Launching.CreateSession;
 
 file record CreateSessionRequestJson
 {
-    [JsonProperty("user_id ")] public string UserId { get; init; } = null!;
-    [JsonProperty("currency")] public string Currency { get; init; } = null!; //
+    [JsonProperty("casino_id")] public string CasinoId { get; init; } = null!;
     [JsonProperty("game")] public string Game { get; init; } = null!;
-    [JsonProperty("game_id")] public string GameId { get; init; } = null!;
-    [JsonProperty("finished")] public bool Finished { get; init; }
-    [JsonProperty("actions")] public RequestActions Actions { get; init; } = null!;
+    [JsonProperty("currency")] public string Currency { get; init; } = null!;
+    [JsonProperty("locale")] public string Locale { get; init; } = null!;
+    [JsonProperty("ip")] public string Ip { get; init; } = null!;
+    [JsonProperty("balance")] public long Balance { get; init; }
+    [JsonProperty("client_type")] public string ClientType { get; init; } = null!;
+    [JsonProperty("urls")] public RequestUrls RequestUrls { get; init; } = null!;
+    [JsonProperty("user")] public UserJson User { get; init; } = null!;
+}
+
+file record UserJson
+{
+    [JsonProperty("id")] public string Id { get; init; } = null!;
+    [JsonProperty("email", NullValueHandling = NullValueHandling.Ignore)] public string? Email { get; set; }
+    [JsonProperty("firstname")] public string FirstName { get; init; } = null!;
+    [JsonProperty("lastname")] public string LastName { get; init; } = null!;
+    [JsonProperty("nickname")] public string Nickname { get; init; } = null!;
+    [JsonProperty("city")] public string City { get; init; } = null!;
+    [JsonProperty("country")] public string Country { get; init; } = null!;
+    [JsonProperty("date_of_birth")] public string DateOfBirth { get; init; } = null!;
+    [JsonProperty("gender")] public string Gender { get; init; } = null!;
+    [JsonProperty("registered_at")] public string RegisteredAt { get; init; } = null!;
+}
+
+file record CreateSessionResponseJson
+{
+    [JsonProperty("launch_options")] public LaunchOptions LaunchOptions { get; init; } = null!;
 }
 
 internal class CreateSessionService : ICreateSessionService
@@ -37,18 +58,34 @@ internal class CreateSessionService : ICreateSessionService
         CreateSessionRequest request,
         CancellationToken cancellationToken = default)
     {
+        // TODO: logging
         var restRequest = new CreateSessionRequestJson
         {
-            UserId = request.UserId.ToString(),
-            Currency = request.Currency.ToString(),
+            CasinoId = parameters.ID,
             Game = request.Game.ToString(),
-            GameId = request.GameId.ToString(),
-            Finished = request.Finished,
-            Actions = request.Actions
+            Currency = request.Money.Code,
+            Locale = "en",
+            Ip = request.IPAddress.ToString(),
+            Balance = request.Money.Amount,
+            ClientType = request.ClientType.ToString().ToLower(),
+            RequestUrls = request.RequestUrls,
+            User = new()
+            {
+                Id = request.User.Id.ToString(),
+                FirstName = request.User.FirstName,
+                LastName = request.User.LastName,
+                Nickname = request.User.Nickname,
+                City = request.User.City,
+                Country = request.User.Country,
+                DateOfBirth = request.User.DateOfBirth.ToISO8601Date(),
+                Gender = request.User.Gender.ToString().First().ToString().ToLower(),
+                RegisteredAt = request.User.DateOfRegistration.ToISO8601Date()
+            }
         };
+        if (request.User.Email is not null) restRequest.User.Email = request.User.Email;
         using var client = new HttpClient();
-        var jsonRequest = JsonConvert.SerializeObject(request);
-
+        var jsonRequest = JsonConvert.SerializeObject(restRequest);
+        if (restRequest.Game.Equals("AcceptanceTest")) jsonRequest = jsonRequest.Replace("AcceptanceTest", "acceptance:test");
         var signature = securityService.GenerateSignature(jsonRequest);
         client.DefaultRequestHeaders.Add("X-REQUEST-SIGN", signature);
         var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
@@ -56,17 +93,7 @@ internal class CreateSessionService : ICreateSessionService
         if (!result.IsSuccessStatusCode)
             throw new HttpRequestException($"Request to provider returned: {((int)result.StatusCode)}");
         var jsonResponse = await result.Content.ReadAsStringAsync();
-        dynamic response = JsonConvert.DeserializeObject(jsonResponse)!;
-        return new()
-        {
-            Balance = Convert.ToDouble(response["balance"]),
-            GameId = response["game_id"],
-            Transactions = new()
-            {
-                ActionId = response["transactions"]["action_id"],
-                TxId = response["transactions"]["tx_id"],
-                ProcessedAt = (response["transactions"]["processed_at"]).ToString().FromISO8601()
-            }
-        };
+        var response = JsonConvert.DeserializeObject<CreateSessionResponseJson>(jsonResponse)!;
+        return new() { LaunchOptions = response.LaunchOptions };
     }
 }

@@ -7,6 +7,7 @@ public static class DateTime
     public static string ToISO8601DateTime(this System.DateTime dateTime) => dateTime.ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
 
     public static string ToISO8601Date(this System.DateTime dateTime) => dateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    public static string ToISO8601Date(this System.DateOnly dateTime) => dateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     public static System.DateTime FromISO8601(this string dateTime)
     {

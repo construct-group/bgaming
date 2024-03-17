@@ -1,6 +1,6 @@
 ﻿namespace Construct.Bgaming.Security;
 
-internal interface IBgamingSecurityService
+public interface IBgamingSecurityService
 {
     public string GenerateSignature(string request);
 

@@ -1,4 +1,6 @@
-﻿using Construct.Bgaming.Launching.CreateSession;
+﻿using Construct.Bgaming.Events.Actions;
+using Construct.Bgaming.Events.Dispatching;
+using Construct.Bgaming.Launching.CreateSession;
 using Construct.Bgaming.Launching.StartDemoGame;
 using Construct.Bgaming.Security;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,9 +13,11 @@ public static class BgamingServiceBuilder
     {
         ArgumentNullException.ThrowIfNull(services, nameof(services));
         services.AddSingleton(parameters);
-        services.AddSingleton<IBgamingSecurityService, BgamingSecurityService>();
-        services.AddSingleton<IStartDemoGameService, StartDemoGameService>();
-        services.AddSingleton<ICreateSessionService, CreateSessionService>();
+        services.AddTransient<IBgamingSecurityService, BgamingSecurityService>();
+        services.AddTransient<IStartDemoGameService, StartDemoGameService>();
+        services.AddTransient<ICreateSessionService, CreateSessionService>();
+        services.AddTransient<IEventDispatcherService, EventDispatcherService>();
+        services.AddTransient<IActionExtractorService, ActionExtractorService>();
         return services;
     }
 }

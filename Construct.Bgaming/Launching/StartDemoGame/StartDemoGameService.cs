@@ -16,6 +16,11 @@ file record StartDemoRequestJson
     [JsonProperty("urls")] public RequestUrls RequestUrls { get; init; } = null!;
 }
 
+file record StartDemoResponseJson
+{
+    [JsonProperty("launch_options")] public LaunchOptions LaunchOptions { get; init; } = null!;
+}
+
 internal class StartDemoGameService : IStartDemoGameService
 {
     private readonly BgamingConfigurationParameters parameters;
@@ -36,6 +41,7 @@ internal class StartDemoGameService : IStartDemoGameService
         StartDemoRequest request,
         CancellationToken cancellationToken = default)
     {
+        // TODO: logging
         var restRequest = new StartDemoRequestJson
         {
             CasinoId = parameters.ID,
@@ -46,7 +52,7 @@ internal class StartDemoGameService : IStartDemoGameService
             RequestUrls = request.RequestUrls
         };
         using var client = new HttpClient();
-        var jsonRequest = JsonConvert.SerializeObject(request);
+        var jsonRequest = JsonConvert.SerializeObject(restRequest);
         if (restRequest.Game.Equals("AcceptanceTest")) jsonRequest = jsonRequest.Replace("AcceptanceTest", "acceptance:test");
         var signature = securityService.GenerateSignature(jsonRequest);
         client.DefaultRequestHeaders.Add("X-REQUEST-SIGN", signature);
@@ -55,14 +61,7 @@ internal class StartDemoGameService : IStartDemoGameService
         if (!result.IsSuccessStatusCode)
             throw new HttpRequestException($"Request to provider returned: {((int)result.StatusCode)}");
         var jsonResponse = await result.Content.ReadAsStringAsync();
-        dynamic response = JsonConvert.DeserializeObject(jsonResponse)!;
-        return new()
-        {
-            LaunchOptions = new()
-            {
-                GameUrl = new Uri(response["launch_options"]["game_url"]),
-                Strategy = Enum.Parse<LaunchStrategy>(response["launch_options"]["strategy"])
-            }
-        };
+        var response = JsonConvert.DeserializeObject<StartDemoResponseJson>(jsonResponse)!;
+        return new() { LaunchOptions = response.LaunchOptions };
     }
 }

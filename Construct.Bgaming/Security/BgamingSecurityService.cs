@@ -20,9 +20,14 @@ internal class BgamingSecurityService : IBgamingSecurityService
     public string GenerateSignature(string request)
     {
         logger.LogDebug("{0}: generating signature for char[{1}]", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss.fff"), request.Length);
-        var hash = new HMACSHA256(Encoding.UTF8.GetBytes(parameters.Token));
-        var signature = hash.ComputeHash(Encoding.UTF8.GetBytes(request));
-        return Convert.ToBase64String(signature);
+        var key = Encoding.UTF8.GetBytes(parameters.Token);
+        var messageBytes = Encoding.UTF8.GetBytes(request);
+
+        using (HMACSHA256 hmac = new HMACSHA256(key))
+        {
+            var hashValue = hmac.ComputeHash(messageBytes);
+            return BitConverter.ToString(hashValue).Replace("-", "").ToLower();
+        }
     }
 
     public bool ValidateSignature(string request, string signature)
